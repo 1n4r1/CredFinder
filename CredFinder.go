@@ -19,20 +19,20 @@ func main() {
  ____________________________________________________________
 
 `
-	defaultWordlist := [3]string{"password", "id", "credential"}
+	defaultWordlist := []string{"password", "id", "credential","パスワード","認証情報"}
 
-	// フラグの定義
 	var (
 		help    bool
 		version bool
 	)
 
-	path := flag.String("path", "./", "Path to start credential searching")
+	root := flag.String("path", "./", "Path to start credential searching")
 	dictionary := flag.String("dictionary", "Default", "Dictionary for keyword searching")
+	//host := flag.String("host", "localhost", "Hostname to run the script")
+	//hosts := flag.String("hosts", "hosts.txt", "Host list to run the script")
 	flag.BoolVar(&help, "help", false, "Show help of the program")
 	flag.BoolVar(&version, "version", false, "Show version of the program")
 
-	// フラグの解析
 	flag.Parse()
 
 	if help {
@@ -46,27 +46,26 @@ func main() {
 		wordlist = defaultWordlist
 	}
 
-	// バージョン情報のチェック
 	if version {
 		fmt.Println("Version 1.0.0")
 		return
 	}
 
 	startTime := time.Now()
+	rootDir := *root
 
 	fmt.Printf(header)
-	fmt.Printf("Start searching possible credential under %s\n", *path)
+	fmt.Printf("Start searching possible credential under \"%s\"\n", rootDir)
 	fmt.Printf("Dictionary: %s\n", wordlist)
 	fmt.Println("Started at:", startTime.Format("2006-01-02 15:04:05"))
 	fmt.Println("=======================Result=========================")
 
-	searchTerm := []string{"password"}
-	err := filepath.Walk(*path, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if !info.IsDir() {
-			found, err := searchInFile(path, searchTerm)
+			found, word, err := searchInFile(path, wordlist)
 			if err != nil {
 				fmt.Println("Error reading file:", path, err)
 				return nil
@@ -75,13 +74,13 @@ func main() {
 				fmt.Println("Found in:", path)
 			}
 		} else {
-			fmt.Println("Searching folder: ", path)
+			fmt.Println("Searching folder:", path)
 		}
 		return nil
 	})
 
 	if err != nil {
-		fmt.Println("Error walking the path", *path, err)
+		fmt.Println("Error walking the root folder", rootDir, err)
 	}
 
 	fmt.Println("\n=======================Finished=======================")
@@ -91,8 +90,9 @@ func main() {
 	fmt.Println("Execution time:", duration)
 }
 
-func searchInFile(filePath string, terms []string) (bool, error) {
-	file, err := os.Open(filePath)
+func searchInFile(root string, terms []string) (bool, error) {
+	file, err := os.Open(root)
+	items := []string{}
 	if err != nil {
 		return false, err
 	}
@@ -102,9 +102,14 @@ func searchInFile(filePath string, terms []string) (bool, error) {
 	for _, term := range terms {
 		for scanner.Scan() {
 			if strings.Contains(scanner.Text(), term) {
-				return true, nil
+				items = append(items, scanner.Text())
 			}
 		}
 	}
-	return false, scanner.Err()
+
+	if items != nil{
+		return true, nil
+	} else {
+		return false, scanner.Err()
+	}
 }
