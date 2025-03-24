@@ -63,26 +63,23 @@ func main() {
 	fmt.Println("=======================Result=========================")
 
 	// multibyte characters are dealt at last, wanna quit using filepath.Walk()
-	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, er error) error {
+		if er != nil {
+			return er
 		}
 
 		if info.IsDir() {
-			fmt.Println("Searching folder:", path)
+			// fmt.Println("Searching folder:", path)
 			return nil
 		}
 
 		searchFileName(path, info.Name() , wordlist)
-		found, err := searchInFile(path, wordlist)
-		if err != nil {
-			fmt.Println("Error reading file:", path, err)
+		e := searchInFile(path, wordlist)
+		if e != nil {
+			fmt.Println("Error reading file:", path, e)
 			return nil
 		}
 
-		if found {
-				//fmt.Println("Found in:", path)
-		}
 		return nil
 	})
 
@@ -100,16 +97,16 @@ func main() {
 func searchFileName(path string, filename string, terms []string) {
 	for _, term := range terms{
 		if strings.Contains(filename, term) {
-			fmt.Printf("\tInteresting filename: %s\n", path)
+			fmt.Printf("Interesting filename: \"%s\"\n", path)
 		}
 	}
 }
 
-func searchInFile(path string, terms []string) (bool, error) {
+func searchInFile(path string, terms []string) error {
 	file, err := os.Open(path)
 	items := []string{}
 	if err != nil {
-		return false, err
+		return err
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
@@ -117,15 +114,15 @@ func searchInFile(path string, terms []string) (bool, error) {
 		for _, term := range terms {
 			if strings.Contains(scanner.Text(), term) {
 				items = append(items, scanner.Text())
-				fmt.Printf("\tFound %s in: %s\n", term, path)
+				fmt.Printf("Found \"%s\" in: %s\n", term, path)
 			}
 		}
 	}
 
 	if items != nil {
 		// To return the content of "items"
-		return true, nil
+		return nil
 	} else {
-		return false, scanner.Err()
+		return scanner.Err()
 	}
 }
