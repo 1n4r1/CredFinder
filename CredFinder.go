@@ -44,6 +44,8 @@ func main() {
 	wordlist := defaultWordlist	
 	if *dictionary != "Default" {
 		wordlist = defaultWordlist
+	} else {
+		{} // read the file and append in the array
 	}
 
 	if version {
@@ -64,17 +66,20 @@ func main() {
 		if err != nil {
 			return err
 		}
-		if !info.IsDir() {
-			found, word, err := searchInFile(path, wordlist)
-			if err != nil {
-				fmt.Println("Error reading file:", path, err)
-				return nil
-			}
-			if found {
-				fmt.Println("Found in:", path)
-			}
-		} else {
+
+		if info.IsDir() {
 			fmt.Println("Searching folder:", path)
+			return nil
+		}
+
+		found, err := searchInFile(path, wordlist)
+		if err != nil {
+			fmt.Println("Error reading file:", path, err)
+			return nil
+		}
+
+		if found {
+				fmt.Println("Found in:", path)
 		}
 		return nil
 	})
@@ -90,8 +95,8 @@ func main() {
 	fmt.Println("Execution time:", duration)
 }
 
-func searchInFile(root string, terms []string) (bool, error) {
-	file, err := os.Open(root)
+func searchInFile(path string, terms []string) (bool, error) {
+	file, err := os.Open(path)
 	items := []string{}
 	if err != nil {
 		return false, err
@@ -107,7 +112,8 @@ func searchInFile(root string, terms []string) (bool, error) {
 		}
 	}
 
-	if items != nil{
+	if items != nil {
+		// To return the content of "items"
 		return true, nil
 	} else {
 		return false, scanner.Err()
