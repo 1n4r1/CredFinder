@@ -19,7 +19,7 @@ func main() {
  ____________________________________________________________
 
 `
-	// defaultWordlist := [3]string{"password", "id", "credential"}
+	defaultWordlist := [3]string{"password", "id", "credential"}
 
 	// フラグの定義
 	var (
@@ -28,7 +28,7 @@ func main() {
 	)
 
 	path := flag.String("path", "./", "Path to start credential searching")
-	dictionary := flag.String("dictionary", "Default", "Dictionary for keywork searching")
+	dictionary := flag.String("dictionary", "Default", "Dictionary for keyword searching")
 	flag.BoolVar(&help, "help", false, "Show help of the program")
 	flag.BoolVar(&version, "version", false, "Show version of the program")
 
@@ -41,6 +41,11 @@ func main() {
 		return
 	}
 
+	wordlist := defaultWordlist	
+	if *dictionary != "Default" {
+		wordlist = defaultWordlist
+	}
+
 	// バージョン情報のチェック
 	if version {
 		fmt.Println("Version 1.0.0")
@@ -51,11 +56,11 @@ func main() {
 
 	fmt.Printf(header)
 	fmt.Printf("Start searching possible credential under %s\n", *path)
-	fmt.Printf("Dictionary: %s\n", *dictionary)
-	fmt.Println("Started at:", startTime)
+	fmt.Printf("Dictionary: %s\n", wordlist)
+	fmt.Println("Started at:", startTime.Format("2006-01-02 15:04:05"))
 	fmt.Println("=======================Result=========================")
 
-	searchTerm := "password"
+	searchTerm := []string{"password"}
 	err := filepath.Walk(*path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -79,15 +84,14 @@ func main() {
 		fmt.Println("Error walking the path", *path, err)
 	}
 
-
 	fmt.Println("\n=======================Finished=======================")
 	endTime := time.Now()
 	duration := endTime.Sub(startTime)
-	fmt.Println("Finished at:", endTime)
+	fmt.Println("Finished at:", endTime.Format("2006-01-02 15:04:05"))
 	fmt.Println("Execution time:", duration)
 }
 
-func searchInFile(filePath string, term string) (bool, error) {
+func searchInFile(filePath string, terms []string) (bool, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return false, err
@@ -95,9 +99,11 @@ func searchInFile(filePath string, term string) (bool, error) {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		if strings.Contains(scanner.Text(), term) {
-			return true, nil
+	for _, term := range terms {
+		for scanner.Scan() {
+			if strings.Contains(scanner.Text(), term) {
+				return true, nil
+			}
 		}
 	}
 	return false, scanner.Err()
