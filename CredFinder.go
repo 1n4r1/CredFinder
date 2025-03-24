@@ -19,7 +19,7 @@ func main() {
  ____________________________________________________________
 
 `
-	defaultWordlist := []string{"password", "id", "credential","パスワード","認証情報"}
+	defaultWordlist := []string{"password", "id", "credential"}
 
 	var (
 		help    bool
@@ -42,10 +42,18 @@ func main() {
 	}
 
 	wordlist := defaultWordlist	
-	if *dictionary != "Default" {
+	if *dictionary == "Default" {
 		wordlist = defaultWordlist
 	} else {
-		{} // read the file and append in the array
+		file, err := os.Open(*dictionary)
+		if err != nil {
+			fmt.Println("Error dictionary file:", *dictionary, err)
+		}
+		defer file.Close()
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			wordlist = append(wordlist, scanner.Text())
+		}
 	}
 
 	if version {
@@ -104,7 +112,6 @@ func searchFileName(path string, filename string, terms []string) {
 
 func searchInFile(path string, terms []string) error {
 	file, err := os.Open(path)
-	items := []string{}
 	if err != nil {
 		return err
 	}
@@ -113,16 +120,9 @@ func searchInFile(path string, terms []string) error {
 	for scanner.Scan() {
 		for _, term := range terms {
 			if strings.Contains(scanner.Text(), term) {
-				items = append(items, scanner.Text())
 				fmt.Printf("Found \"%s\" in: %s\n", term, path)
 			}
 		}
 	}
-
-	if items != nil {
-		// To return the content of "items"
-		return nil
-	} else {
-		return scanner.Err()
-	}
+	return scanner.Err()
 }
