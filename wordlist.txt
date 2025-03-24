@@ -1,0 +1,5 @@
+password
+id
+credential
+パスワード
+認証情報
