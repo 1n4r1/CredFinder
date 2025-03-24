@@ -62,6 +62,7 @@ func main() {
 	fmt.Println("Started at:", startTime.Format("2006-01-02 15:04:05"))
 	fmt.Println("=======================Result=========================")
 
+	// multibyte characters are dealt at last, wanna quit using filepath.Walk()
 	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -72,6 +73,7 @@ func main() {
 			return nil
 		}
 
+		searchFileName(path, info.Name() , wordlist)
 		found, err := searchInFile(path, wordlist)
 		if err != nil {
 			fmt.Println("Error reading file:", path, err)
@@ -79,7 +81,7 @@ func main() {
 		}
 
 		if found {
-				fmt.Println("Found in:", path)
+				//fmt.Println("Found in:", path)
 		}
 		return nil
 	})
@@ -95,6 +97,14 @@ func main() {
 	fmt.Println("Execution time:", duration)
 }
 
+func searchFileName(path string, filename string, terms []string) {
+	for _, term := range terms{
+		if strings.Contains(filename, term) {
+			fmt.Printf("\tInteresting filename: %s\n", path)
+		}
+	}
+}
+
 func searchInFile(path string, terms []string) (bool, error) {
 	file, err := os.Open(path)
 	items := []string{}
@@ -102,12 +112,12 @@ func searchInFile(path string, terms []string) (bool, error) {
 		return false, err
 	}
 	defer file.Close()
-
 	scanner := bufio.NewScanner(file)
-	for _, term := range terms {
-		for scanner.Scan() {
+	for scanner.Scan() {
+		for _, term := range terms {
 			if strings.Contains(scanner.Text(), term) {
 				items = append(items, scanner.Text())
+				fmt.Printf("\tFound %s in: %s\n", term, path)
 			}
 		}
 	}
