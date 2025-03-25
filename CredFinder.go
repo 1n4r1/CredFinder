@@ -28,20 +28,15 @@ func main() {
 
 	root := flag.String("path", "./", "Path to start credential searching")
 	dictionary := flag.String("dictionary", "Default", "Dictionary for keyword searching")
-	//host := flag.String("host", "localhost", "Hostname to run the script")
+	//host := flag.String("host", "\\\\localhost\\", "Hostname to run the script")
 	//hosts := flag.String("hosts", "hosts.txt", "Host list to run the script")
 	flag.BoolVar(&help, "help", false, "Show help of the program")
 	flag.BoolVar(&version, "version", false, "Show version of the program")
 
 	flag.Parse()
 
-	if help {
-		fmt.Println("Usage:")
-		fmt.Println(".\\CredFinder.exe -Path C:\\ -Dictionary dictionary.txt")
-		return
-	}
-
-	wordlist := defaultWordlist	
+	// read the dictionary file
+	wordlist := []string{}
 	if *dictionary == "Default" {
 		wordlist = defaultWordlist
 	} else {
@@ -56,14 +51,23 @@ func main() {
 		}
 	}
 
+	rootDir := *root
+	// if *host != "\\\\localhost\\" {
+	//	rootDir = *host + *root
+	// }
+
+	if help {
+		fmt.Println("Usage:")
+		fmt.Println(".\\CredFinder.exe -path C:\\ -dictionary dictionary.txt")
+		return
+	}
+
 	if version {
 		fmt.Println("Version 1.0.0")
 		return
 	}
 
 	startTime := time.Now()
-	rootDir := *root
-
 	fmt.Printf(header)
 	fmt.Printf("Start searching possible credential under \"%s\"\n", rootDir)
 	fmt.Printf("Dictionary: %s\n", wordlist)
