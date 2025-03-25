@@ -20,16 +20,15 @@ func main() {
 
 `
 	defaultWordlist := []string{"password", "id", "credential"}
+	directories := []string{}
 
 	var (
 		help    bool
 		version bool
 	)
 
-	root := flag.String("path", "./", "Path to start credential searching")
+	path := flag.String("path", "./", "Path to start credential searching")
 	dictionary := flag.String("dictionary", "Default", "Dictionary for keyword searching")
-	//host := flag.String("host", "\\\\localhost\\", "Hostname to run the script")
-	//hosts := flag.String("hosts", "hosts.txt", "Host list to run the script")
 	flag.BoolVar(&help, "help", false, "Show help of the program")
 	flag.BoolVar(&version, "version", false, "Show version of the program")
 
@@ -43,6 +42,7 @@ func main() {
 		file, err := os.Open(*dictionary)
 		if err != nil {
 			fmt.Println("Error dictionary file:", *dictionary, err)
+			return
 		}
 		defer file.Close()
 		scanner := bufio.NewScanner(file)
@@ -51,10 +51,31 @@ func main() {
 		}
 	}
 
-	rootDir := *root
-	// if *host != "\\\\localhost\\" {
-	//	rootDir = *host + *root
-	// }
+	// if default, *path, else judge if it is a file, then string
+	if *path == "./" {
+		directories = append(directories, *path)
+	} else {
+		file, err := os.Open(*path)
+		if err != nil {
+			fmt.Println("Error opening file:", err)
+			return
+		}
+		defer file.Close()
+
+		fileInfo, err := file.Stat()
+		if err != nil {
+			fmt.Println("Error getting file information:", err)
+			return
+		}
+		if fileInfo.IsDir() {
+			directories = append(directories, *path)
+		} else {
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				directories = append(directories, scanner.Text())
+			}
+		}
+	}
 
 	if help {
 		fmt.Println("Usage:")
@@ -69,36 +90,36 @@ func main() {
 
 	startTime := time.Now()
 	fmt.Printf(header)
-	fmt.Printf("Start searching possible credential under \"%s\"\n", rootDir)
+	fmt.Printf("Searching possible credential under %s\n", directories)
 	fmt.Printf("Dictionary: %s\n", wordlist)
 	fmt.Println("Started at:", startTime.Format("2006-01-02 15:04:05"))
 	fmt.Println("=======================Result=========================")
 
-	// multibyte characters are dealt at last, wanna quit using filepath.Walk()
-	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, er error) error {
-		if er != nil {
-			return er
-		}
+	for _, dir := range directories { 
+		// multibyte characters are dealt at last, wanna quit using filepath.Walk()
+		err := filepath.Walk(dir, func(path string, info os.FileInfo, er error) error {
+			if er != nil {
+				return er
+			}
 
-		if info.IsDir() {
-			// fmt.Println("Searching folder:", path)
+			if info.IsDir() {
+				// fmt.Println("Searching folder:", path)
+				return nil
+			}
+
+			searchFileName(path, info.Name() , wordlist)
+			e := searchInFile(path, wordlist)
+			if e != nil {
+				fmt.Println("Error reading file:", path, e)
+				return nil
+			}
 			return nil
+		})
+
+		if err != nil {
+			fmt.Println("Error walking the root folder", dir, err)
 		}
-
-		searchFileName(path, info.Name() , wordlist)
-		e := searchInFile(path, wordlist)
-		if e != nil {
-			fmt.Println("Error reading file:", path, e)
-			return nil
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		fmt.Println("Error walking the root folder", rootDir, err)
 	}
-
 	fmt.Println("\n=======================Finished=======================")
 	endTime := time.Now()
 	duration := endTime.Sub(startTime)
